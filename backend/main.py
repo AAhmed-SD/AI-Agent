@@ -3,6 +3,8 @@ from pydantic import BaseModel
 import openai
 import csv
 import os
+from scraper import LeadScraper
+from sender import OutreachSender
 
 app = FastAPI()
 
@@ -51,4 +53,16 @@ async def upload_replies(file: UploadFile = File(...)):
     file_location = f"output/{file.filename}"
     with open(file_location, "wb+") as file_object:
         file_object.write(file.file.read())
-    return {"info": f"file '{file.filename}' saved at '{file_location}'"} 
+    return {"info": f"file '{file.filename}' saved at '{file_location}'"}
+
+@app.post("/scrape-leads")
+async def scrape_leads(platform: str, keyword: str):
+    scraper = LeadScraper(platform, keyword)
+    leads = scraper.scrape()
+    return {"leads": leads}
+
+@app.post("/send-outreach")
+async def send_outreach(service: str, api_key: str, to_email: str, subject: str, body: str):
+    sender = OutreachSender(service, api_key)
+    result = sender.send_email(to_email, subject, body)
+    return {"result": result} 
